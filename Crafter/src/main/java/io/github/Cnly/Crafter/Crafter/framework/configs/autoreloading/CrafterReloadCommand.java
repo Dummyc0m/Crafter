@@ -1,8 +1,8 @@
-package io.github.Cnly.Crafter.Crafter.framework.commands;
+package io.github.Cnly.Crafter.Crafter.framework.configs.autoreloading;
 
 import java.util.List;
 
-import io.github.Cnly.Crafter.Crafter.framework.configs.autoreloading.CrafterConfigReloader;
+import io.github.Cnly.Crafter.Crafter.framework.commands.AbstractCrafterCommand;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -37,9 +37,14 @@ public class CrafterReloadCommand extends AbstractCrafterCommand
     protected void executeCommand(CommandSender sender, String[] args)
     {
         
-        this.reloader.doReload();
+        this.doReload();
         sender.sendMessage(this.reloadMessage);
         
+    }
+    
+    protected void doReload()
+    {
+        this.reloader.doReload();
     }
     
     public CrafterReloadCommand addClass(Object classInstance)

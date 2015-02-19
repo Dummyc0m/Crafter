@@ -12,6 +12,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class CrafterLocaleManager implements ILocaleManager
 {
@@ -19,6 +20,7 @@ public class CrafterLocaleManager implements ILocaleManager
     private String locale;
     private File localeDirectory;
     private Map<String, String> stringMappings;
+    private JavaPlugin jp;
     
     /**
      * The constructor
@@ -29,12 +31,16 @@ public class CrafterLocaleManager implements ILocaleManager
      *            the locale directory
      * @param copyDefault
      *            whether to call copyDefaultLocaleFile() automatically
+     * @param jp
+     *            the JavaPlugin used for resource files obtaining. If this is
+     *            null, this function will throw exceptions.
      */
     public CrafterLocaleManager(String locale, File localeDirectory,
-            boolean copyDefault)
+            boolean copyDefault, JavaPlugin jp)
     {
         
         this.locale = locale;
+        this.jp = jp;
         this.localeDirectory = localeDirectory;
         this.stringMappings = new HashMap<String, String>();
         
@@ -125,9 +131,13 @@ public class CrafterLocaleManager implements ILocaleManager
     @Override
     public void copyDefaultLocaleFile(String resourceLocation)
     {
+        
+        if (null == this.jp)
+            throw new NullPointerException("JavaPlugin is null!");
+        
         try
         {
-            ResourceUtils.copyFromJar(resourceLocation, new File(
+            ResourceUtils.copyFromJar(this.jp, resourceLocation, new File(
                     localeDirectory, this.locale + ".yml"));
         }
         catch (IOException e)

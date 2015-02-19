@@ -28,14 +28,13 @@ public interface ILocaleManager
     public String getLocalizedString(String key);
     
     /**
-     * Copies the default file from the jar to the file if there isn't one
+     * Copies the default file from the jar to the file
      */
     public void copyDefaultLocaleFile();
     
     /**
-     * Copies the file specified from the jar to the file if there isn't one
+     * Copies the file specified from the jar to the file
      */
     public void copyDefaultLocaleFile(String resourceLocation);
-    
     
 }

@@ -1,7 +1,5 @@
 package io.github.Cnly.Crafter.Crafter.framework.configs;
 
-import io.github.Cnly.Crafter.Crafter.utils.ResourceUtils;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,14 +10,11 @@ import java.util.Map;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
-public class CrafterYamlConfigManager implements IConfigManager
+public class CrafterYamlConfigManager extends AbstractConfigManager
 {
     
-    private final File file;
     private YamlConfiguration yml;
-    private AutoSaveTask autoSaveTask = null;
     
     /**
      * The constructor
@@ -28,86 +23,77 @@ public class CrafterYamlConfigManager implements IConfigManager
      *            the config file
      * @param copyDefault
      *            whether to call this.copyDefaultConfig() automatically
+     * @param jp
+     *            the JavaPlugin used for resource files obtaining and task
+     *            registering. If this is null, these functions will throw
+     *            exceptions.
      */
-    public CrafterYamlConfigManager(File file, boolean copyDefault)
+    public CrafterYamlConfigManager(File file, boolean copyDefault,
+            JavaPlugin jp)
     {
-        this.file = file;
-        
-        if (copyDefault && !file.exists())
-            this.copyDefaultConfig();
-        
+        super(file, copyDefault, jp);
         this.yml = YamlConfiguration.loadConfiguration(file);
-        
     }
     
-    @Override
     public boolean isSet(String path)
     {
         return this.yml.isSet(path);
     }
     
-    @Override
     public CrafterYamlConfigManager set(String path, Object value)
     {
         this.yml.set(path, value);
         return this;
     }
     
-    @Override
     public Object getObject(String path)
     {
         return this.yml.get(path);
     }
     
-    @Override
     public String getString(String path)
     {
         return this.yml.getString(path);
     }
     
-    @Override
     public int getInt(String path)
     {
         return this.yml.getInt(path);
     }
     
-    @Override
     public double getDouble(String path)
     {
         return this.yml.getDouble(path);
     }
     
-    @Override
     public boolean getBoolean(String path)
     {
         return this.yml.getBoolean(path);
     }
     
-    @Override
     public byte getByte(String path)
     {
         return (byte)this.yml.getInt(path);
     }
     
-    @Override
-    public CrafterYamlConfigManager copyDefaultConfig()
+    /**
+     * Get the specified ConfigurationSection. If there isn't one, a new one
+     * will be created.
+     * 
+     * @param path
+     * @return ConfigurationSection
+     */
+    public ConfigurationSection getConfigurationSection(String path)
     {
-        this.copyDefaultConfig("/" + this.file.getName());
-        return this;
-    }
-    
-    @Override
-    public CrafterYamlConfigManager copyDefaultConfig(String resourceLocation)
-    {
-        try
+        
+        ConfigurationSection section = this.yml.getConfigurationSection(path);
+        if (null == section)
         {
-            ResourceUtils.copyFromJar(resourceLocation, this.file);
+            section = this.yml.createSection(path);
+            this.save();
         }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Cannot copy default file", e);
-        }
-        return this;
+        
+        return section;
     }
     
     @Override
@@ -132,7 +118,6 @@ public class CrafterYamlConfigManager implements IConfigManager
         return this;
     }
     
-    @Override
     public HashMap<String, String> getStringMap(String path)
     {
         HashMap<String, String> result = new HashMap<String, String>();
@@ -144,7 +129,6 @@ public class CrafterYamlConfigManager implements IConfigManager
         return result;
     }
     
-    @Override
     public HashMap<String, Integer> getIntegerMap(String path)
     {
         HashMap<String, Integer> result = new HashMap<String, Integer>();
@@ -156,7 +140,6 @@ public class CrafterYamlConfigManager implements IConfigManager
         return result;
     }
     
-    @Override
     public Map<String, Double> getDoubleMap(String path)
     {
         HashMap<String, Double> result = new HashMap<String, Double>();
@@ -169,21 +152,18 @@ public class CrafterYamlConfigManager implements IConfigManager
     }
     
     @SuppressWarnings("unchecked")
-    @Override
     public List<String> getStringList(String path)
     {
         return (List<String>)this.yml.getList(path);
     }
     
     @SuppressWarnings("unchecked")
-    @Override
     public List<Integer> getIntegerList(String path)
     {
         return (List<Integer>)this.yml.getList(path);
     }
     
     @SuppressWarnings("unchecked")
-    @Override
     public List<Double> getDoubleList(String path)
     {
         return (List<Double>)this.yml.getList(path);
@@ -195,7 +175,7 @@ public class CrafterYamlConfigManager implements IConfigManager
         @SuppressWarnings("unchecked")
         List<E> l = (List<E>)this.yml.getList(path);
         
-        if (null == l)
+        if (null == l || l.isEmpty())
             l = new ArrayList<E>();
         
         l.add(obj);
@@ -211,7 +191,7 @@ public class CrafterYamlConfigManager implements IConfigManager
         @SuppressWarnings("unchecked")
         List<E> l = (List<E>)this.yml.getList(path);
         
-        if (null == l)
+        if (null == l || l.isEmpty())
             return this;
         
         l.remove(obj);
@@ -224,47 +204,6 @@ public class CrafterYamlConfigManager implements IConfigManager
     public YamlConfiguration getYamlConfig()
     {
         return this.yml;
-    }
-    
-    @Override
-    public boolean isAutoSaveSet()
-    {
-        return this.autoSaveTask != null;
-    }
-    
-    @Override
-    public void setAutoSaveInterval(JavaPlugin jp, int seconds)
-    {
-        
-        if (seconds == 0)
-        {// Turn it off!
-        
-            if (this.autoSaveTask != null)
-            {
-                this.autoSaveTask.cancel();
-                this.autoSaveTask = null;
-            }
-            
-        }
-        else
-        {
-            
-            this.autoSaveTask = new AutoSaveTask();
-            this.autoSaveTask.runTaskTimer(jp, seconds * 20, seconds * 20);
-            
-        }
-        
-    }
-    
-    private class AutoSaveTask extends BukkitRunnable
-    {
-        
-        @Override
-        public void run()
-        {
-            CrafterYamlConfigManager.this.save();
-        }
-        
     }
     
 }
